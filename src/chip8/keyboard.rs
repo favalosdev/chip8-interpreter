@@ -10,8 +10,6 @@ impl Keyboard {
     pub fn new() -> Self {
         let mut key_map = HashMap::new();
 
-        // Reference from main.rs
-        // Lines 23-41 for key mappings
         key_map.insert(Scancode::Num1, 0x1);
         key_map.insert(Scancode::Num2, 0x2);
         key_map.insert(Scancode::Num3, 0x3);

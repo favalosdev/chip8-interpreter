@@ -62,7 +62,7 @@ fn main() -> Result<(), String> {
         }
 
         // Update timers
-        cpu.update_timers();
+        // cpu.update_timers();
 
         // Render display
         if display.changed {
