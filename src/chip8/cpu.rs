@@ -95,11 +95,9 @@ impl CPU {
                         let sprite_byte = memory.read_byte(self.i as usize + row);
                         for col in 0..SPRITE_WIDTH {
                             if x_coord + col < ORIGINAL_WIDTH as usize {
-                                let sprite_pixel = (sprite_byte & (0x80 >> col)) != 0;
-                                if sprite_pixel {
-                                    if display.draw_pixel(x_coord + col, y_coord + row, true) {
-                                        self.v[0xF] = 1;
-                                    }
+                                let to_draw = (sprite_byte & (0x80 >> col)) != 0;
+                                if display.draw_pixel(x_coord + col, y_coord + row, to_draw) {
+                                    self.v[0xF] = 1;
                                 }
                             }
                         }
