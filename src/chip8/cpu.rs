@@ -46,14 +46,12 @@ impl CPU {
         display: &mut Display,
     ) -> Result<(), String> {
         // Decode opcode parts
-        let opcode_class = ((opcode & 0xF000) >> 12) as u8;
-        let op_2 = ((opcode & 0x0F00) >> 8) as u8;
-        let op_3 = ((opcode & 0x00F0) >> 4) as u8;
-        let op_4 = (opcode & 0x000F) as u8;
-        let nnn = opcode & 0x0FFF;
+        let opcode_class = (opcode & 0xF000) >> 12;
+        let x = ((opcode & 0x0F00) >> 8) as usize;
+        let y = ((opcode & 0x00F0) >> 4) as usize;
+        let n = (opcode & 0x000F) as u8;
         let nn = (opcode & 0x00FF) as u8;
-        let x = op_2 as usize;
-        let y = op_3 as usize;
+        let nnn: u16 = opcode & 0x0FFF;
 
         // Increment PC by default (some instructions will override this)
         self.pc += 2;
@@ -90,24 +88,19 @@ impl CPU {
                 self.v[0xF] = 0;
                 let x_coord = self.v[x] as usize % ORIGINAL_WIDTH as usize;
                 let y_coord = self.v[y] as usize % ORIGINAL_HEIGHT as usize;
-                let height = op_4 as usize;
+                let height = n as usize;
 
                 for row in 0..height {
-                    if y_coord + row >= ORIGINAL_HEIGHT as usize {
-                        break;
-                    }
-
-                    let sprite_byte = memory.read_byte(self.i as usize + row);
-
-                    for col in 0..SPRITE_WIDTH {
-                        if x_coord + col >= ORIGINAL_WIDTH as usize {
-                            break;
-                        }
-
-                        let sprite_pixel = (sprite_byte & (0x80 >> col)) != 0;
-                        if sprite_pixel {
-                            if display.draw_pixel(x_coord + col, y_coord + row, true) {
-                                self.v[0xF] = 1;
+                    if y_coord + row < ORIGINAL_HEIGHT as usize {
+                        let sprite_byte = memory.read_byte(self.i as usize + row);
+                        for col in 0..SPRITE_WIDTH {
+                            if x_coord + col < ORIGINAL_WIDTH as usize {
+                                let sprite_pixel = (sprite_byte & (0x80 >> col)) != 0;
+                                if sprite_pixel {
+                                    if display.draw_pixel(x_coord + col, y_coord + row, true) {
+                                        self.v[0xF] = 1;
+                                    }
+                                }
                             }
                         }
                     }
