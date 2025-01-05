@@ -1,5 +1,6 @@
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
+use std::env;
 use std::fs::File;
 use std::io::Read;
 use std::time::Duration;
@@ -15,6 +16,10 @@ use chip8::{
 mod chip8;
 
 fn main() -> Result<(), String> {
+    // Get ROM filename from command line arguments
+    let args: Vec<String> = env::args().collect();
+    let rom_path = args.get(1).ok_or("Usage: chip8-emulator <rom_file>")?;
+
     let sdl_context = sdl2::init()?;
     let video_subsystem = sdl_context.video()?;
 
@@ -33,7 +38,7 @@ fn main() -> Result<(), String> {
     let mut display = Display::new();
     let mut keyboard = Keyboard::new();
 
-    let mut rom_file = File::open("roms/test/1-chip8-logo.ch8").map_err(|e| e.to_string())?;
+    let mut rom_file = File::open(rom_path).map_err(|e| e.to_string())?;
     let mut rom_data = Vec::new();
 
     rom_file
