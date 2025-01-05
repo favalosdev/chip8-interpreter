@@ -1,5 +1,7 @@
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
+use std::fs::File;
+use std::io::Read;
 use std::time::Duration;
 
 use chip8::{
@@ -31,10 +33,16 @@ fn main() -> Result<(), String> {
     let mut display = Display::new();
     let mut keyboard = Keyboard::new();
 
-    // TODO: Load ROM
-    // memory.load_rom(&rom_data);
+    let mut rom_file = File::open("roms/test/1-chip8-logo.ch8").map_err(|e| e.to_string())?;
+    let mut rom_data = Vec::new();
 
-    'running: loop {
+    rom_file
+        .read_to_end(&mut rom_data)
+        .map_err(|e| e.to_string())?;
+
+    memory.load_rom(&rom_data);
+
+    'sdl_running: loop {
         // Handle SDL events
         for event in event_pump.poll_iter() {
             match event {
@@ -42,7 +50,7 @@ fn main() -> Result<(), String> {
                 | Event::KeyDown {
                     keycode: Some(Keycode::Escape),
                     ..
-                } => break 'running,
+                } => break 'sdl_running,
                 Event::KeyDown {
                     scancode: Some(scancode),
                     ..
@@ -58,7 +66,7 @@ fn main() -> Result<(), String> {
         // Execute CPU cycle
         if let Err(e) = cpu.step(&mut memory, &mut display) {
             eprintln!("CPU error: {}", e);
-            break 'running;
+            break 'sdl_running;
         }
 
         // Update timers

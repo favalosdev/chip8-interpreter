@@ -46,7 +46,7 @@ impl CPU {
         display: &mut Display,
     ) -> Result<(), String> {
         // Decode opcode parts
-        let op_1 = ((opcode & 0xF000) >> 12) as u8;
+        let opcode_class = ((opcode & 0xF000) >> 12) as u8;
         let op_2 = ((opcode & 0x0F00) >> 8) as u8;
         let op_3 = ((opcode & 0x00F0) >> 4) as u8;
         let op_4 = (opcode & 0x000F) as u8;
@@ -58,7 +58,7 @@ impl CPU {
         // Increment PC by default (some instructions will override this)
         self.pc += 2;
 
-        match op_1 {
+        match opcode_class {
             0x0 => {
                 match opcode {
                     0x00E0 => display.clear(),
