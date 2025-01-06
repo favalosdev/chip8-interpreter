@@ -55,7 +55,7 @@ cargo build --release
 
 ## Running
 
-To run the interpreter:
+To run the interpreter, load one of the roms in the `roms` folder:
 
 ```bash
 cargo run --release path/to/rom
@@ -82,10 +82,6 @@ cargo test
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Acknowledgments
 
