@@ -50,15 +50,15 @@ cd chip8-interpreter
 2. Build the project:
 
 ```bash
-cargo build --release
+cargo build
 ```
 
 ## Running
 
-To run the interpreter, load one of the roms in the `roms` folder:
+To run the interpreter, load one of the roms in the `roms` folder. For example:
 
 ```bash
-cargo run --release path/to/rom
+cargo run roms/test/pong.ch8
 ```
 
 ## Project Structure
