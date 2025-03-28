@@ -4,6 +4,7 @@ pub const SCALE_FACTOR: u32 = 10;
 pub const WINDOW_WIDTH: u32 = ORIGINAL_WIDTH * SCALE_FACTOR;
 pub const WINDOW_HEIGHT: u32 = ORIGINAL_HEIGHT * SCALE_FACTOR;
 pub const SPRITE_WIDTH: usize = 8;
+pub const TIMER_DECREASE_RATE: u32 = 60;
 
 pub const FONT_SET: [u8; 80] = [
     0xF0, 0x90, 0x90, 0x90, 0xF0, // 0

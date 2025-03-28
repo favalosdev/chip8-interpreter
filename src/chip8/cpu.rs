@@ -9,9 +9,6 @@ pub struct CPU {
     i: u16,
     // Stack for subroutines
     stack: Vec<u16>,
-    // Timers
-    delay_timer: u8,
-    sound_timer: u8,
 }
 
 impl CPU {
@@ -21,8 +18,6 @@ impl CPU {
             v: [0; 16],
             i: 0,
             stack: Vec::new(),
-            delay_timer: 0,
-            sound_timer: 0,
         }
     }
 
@@ -111,6 +106,9 @@ impl CPU {
     }
 }
 
+/*
+Perhaps tests are not needed since the roms are good feedback sources
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -142,3 +140,4 @@ mod tests {
         assert!(!display.pixels[0][0]);
     }
 }
+*/

@@ -58,7 +58,7 @@ cargo build
 To run the interpreter, load one of the roms in the `roms` folder. For example:
 
 ```bash
-cargo run roms/test/pong.ch8
+cargo run roms/test/1-chip8-logo.ch8
 ```
 
 ## Project Structure

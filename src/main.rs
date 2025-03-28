@@ -1,12 +1,17 @@
+extern crate fps_clock;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use std::env;
 use std::fs::File;
 use std::io::Read;
-use std::time::Duration;
+use std::process::Command;
+use std::thread;
 
 use chip8::{
-    constants::{ORIGINAL_HEIGHT, ORIGINAL_WIDTH, SCALE_FACTOR, WINDOW_HEIGHT, WINDOW_WIDTH},
+    constants::{
+        ORIGINAL_HEIGHT, ORIGINAL_WIDTH, SCALE_FACTOR, TIMER_DECREASE_RATE, WINDOW_HEIGHT,
+        WINDOW_WIDTH,
+    },
     cpu::CPU,
     display::Display,
     keyboard::Keyboard,
@@ -15,8 +20,17 @@ use chip8::{
 
 mod chip8;
 
+fn beep(frequency: u32, duration_ms: u64) {
+    Command::new("beep")
+        .arg("-f")
+        .arg(frequency.to_string())
+        .arg("-l")
+        .arg(duration_ms.to_string())
+        .status()
+        .expect("Failed to execute beep");
+}
+
 fn main() -> Result<(), String> {
-    // Get ROM filename from command line arguments
     let args: Vec<String> = env::args().collect();
     let rom_path = args.get(1).ok_or("Usage: chip8-emulator <rom_file>")?;
 
@@ -46,6 +60,34 @@ fn main() -> Result<(), String> {
         .map_err(|e| e.to_string())?;
 
     memory.load_rom(&rom_data);
+
+    let mut sound_timer: u8 = 0;
+    let mut sound_fps = fps_clock::FpsClock::new(TIMER_DECREASE_RATE);
+
+    'sound_loop: loop {
+        if sound_timer > 0 {
+            sound_timer = sound_timer.saturating_sub(1);
+            thread::spawn(|| {
+                beep(440, 500);
+            });
+        } else {
+            break 'sound_loop;
+        }
+        sound_fps.tick();
+    }
+
+    let mut delay_timer: u8 = 0;
+    let mut delay_fps = fps_clock::FpsClock::new(TIMER_DECREASE_RATE);
+
+    'delay_loop: loop {
+        if delay_timer > 0 {
+            delay_timer = delay_timer.saturating_sub(1);
+        } else {
+            break 'delay_loop;
+        }
+
+        delay_fps.tick();
+    }
 
     'sdl_running: loop {
         // Handle SDL events
@@ -83,6 +125,7 @@ fn main() -> Result<(), String> {
             canvas.clear();
 
             canvas.set_draw_color(sdl2::pixels::Color::RGB(255, 255, 255));
+
             for y in 0..ORIGINAL_HEIGHT as usize {
                 for x in 0..ORIGINAL_WIDTH as usize {
                     if display.pixels[y][x] {
@@ -99,8 +142,6 @@ fn main() -> Result<(), String> {
             canvas.present();
             display.changed = false;
         }
-
-        std::thread::sleep(Duration::from_millis(2)); // ~500Hz
     }
 
     Ok(())
