@@ -105,39 +105,3 @@ impl CPU {
         Ok(())
     }
 }
-
-/*
-Perhaps tests are not needed since the roms are good feedback sources
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_cpu_initialization() {
-        let cpu = CPU::new();
-        assert_eq!(cpu.pc, 0x200);
-        assert_eq!(cpu.v, [0; 16]);
-        assert_eq!(cpu.i, 0);
-        assert!(cpu.stack.is_empty());
-    }
-
-    #[test]
-    fn test_clear_screen() {
-        let mut cpu = CPU::new();
-        let mut memory = Memory::new();
-        let mut display = Display::new();
-
-        // Set a pixel
-        display.draw_pixel(0, 0, true);
-        assert!(display.pixels[0][0]);
-
-        // Execute clear screen instruction (0x00E0)
-        memory.write_byte(0x200, 0x00);
-        memory.write_byte(0x201, 0xE0);
-        cpu.step(&mut memory, &mut display).unwrap();
-
-        assert!(!display.pixels[0][0]);
-    }
-}
-*/

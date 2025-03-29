@@ -16,10 +16,6 @@ impl Memory {
         self.memory[address]
     }
 
-    pub fn write_byte(&mut self, address: usize, value: u8) {
-        self.memory[address] = value;
-    }
-
     pub fn load_rom(&mut self, data: &[u8]) {
         for (i, &byte) in data.iter().enumerate() {
             self.memory[0x200 + i] = byte;
