@@ -1,4 +1,5 @@
-use super::{constants::*, display::Display, memory::Memory};
+use super::{constants::*, display::Display, memory::Memory, utils::beep};
+use std::thread;
 
 pub struct CPU {
     // Program counter
@@ -9,6 +10,8 @@ pub struct CPU {
     i: u16,
     // Stack for subroutines
     stack: Vec<u16>,
+    sound_timer: u8,
+    delay_timer: u8,
 }
 
 impl CPU {
@@ -18,6 +21,8 @@ impl CPU {
             v: [0; 16],
             i: 0,
             stack: Vec::new(),
+            sound_timer: 0,
+            delay_timer: 0,
         }
     }
 
@@ -26,6 +31,19 @@ impl CPU {
         let opcode = self.fetch(memory);
         // Decode and Execute
         self.execute(opcode, memory, display)
+    }
+
+    pub fn update_timers(&mut self) {
+        if self.sound_timer > 0 {
+            self.sound_timer = self.sound_timer.wrapping_sub(1);
+            thread::spawn(move || {
+                beep(440, 550);
+            });
+        }
+
+        if self.delay_timer > 0 {
+            self.delay_timer = self.delay_timer.wrapping_sub(1);
+        }
     }
 
     fn fetch(&self, memory: &Memory) -> u16 {
