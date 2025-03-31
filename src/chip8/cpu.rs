@@ -3,13 +3,9 @@ use rand::prelude::*;
 use std::thread;
 
 pub struct CPU {
-    // Program counter
     pc: u16,
-    // General purpose registers V0-VF
     v: [u8; 16],
-    // Index register
     i: u16,
-    // Stack for subroutines
     stack: Vec<u16>,
     sound_timer: u8,
     delay_timer: u8,
@@ -18,7 +14,7 @@ pub struct CPU {
 impl CPU {
     pub fn new() -> Self {
         Self {
-            pc: 0x200, // Program starts at 0x200
+            pc: 0x200,
             v: [0; 16],
             i: 0,
             stack: Vec::new(),
@@ -34,7 +30,7 @@ impl CPU {
         keyboard: &Keyboard,
     ) -> Result<(), String> {
         let opcode = self.fetch(memory);
-        return self.execute(opcode, memory, display, keyboard);
+        self.execute(opcode, memory, display, keyboard)
     }
 
     pub fn update_timers(&mut self) {
@@ -56,6 +52,10 @@ impl CPU {
         (high_byte << 8) | low_byte
     }
 
+    fn advance_pc(&mut self) {
+        self.pc = self.pc.wrapping_add(2);
+    }
+
     fn execute(
         &mut self,
         opcode: u16,
@@ -71,11 +71,10 @@ impl CPU {
         let nn = (opcode & 0x00FF) as u8;
         let nnn: u16 = opcode & 0x0FFF;
 
-        // Increment PC by default (some instructions will override this)
-        self.pc += 2;
-
         let error: Result<(), String> = Err(format!("Unknown opcode: {:#06X}", opcode));
         let mut rng = rand::rng();
+
+        self.advance_pc();
 
         match opcode_class {
             0x0 => {
@@ -89,26 +88,29 @@ impl CPU {
                 }
             }
             0x1 => {
+                // Overrides increment
                 self.pc = nnn;
             }
             0x2 => {
                 self.stack.push(self.pc);
+                // Overrides increment
                 self.pc = nnn;
             }
+            // Rethink skip instructions
             0x3 => {
                 if self.v[x] == nn {
-                    self.pc += 2;
+                    self.advance_pc();
                 }
             }
             0x4 => {
                 if self.v[x] != nn {
-                    self.pc += 2;
+                    self.advance_pc();
                 }
             }
             0x5 => match n {
                 0 => {
                     if self.v[x] == self.v[y] {
-                        self.pc += 2;
+                        self.advance_pc();
                     }
                 }
                 _ => return error,
@@ -117,37 +119,37 @@ impl CPU {
                 self.v[x] = nn;
             }
             0x7 => {
-                self.v[x] += nn;
+                self.v[x] = self.v[x].wrapping_add(nn);
             }
             0x8 => match n {
-                0 => {
+                0x0 => {
                     self.v[x] = self.v[y];
                 }
-                1 => {
+                0x1 => {
                     self.v[x] = self.v[x] | self.v[y];
                 }
-                2 => {
+                0x2 => {
                     self.v[x] = self.v[x] & self.v[y];
                 }
-                3 => {
+                0x3 => {
                     self.v[x] = self.v[x] ^ self.v[y];
                 }
-                4 => {
-                    let result = (self.v[x] + self.v[y]) as u16;
+                0x4 => {
+                    let result = (self.v[x] as u16).wrapping_add(self.v[y] as u16);
                     self.v[0xF] = u8::from(result > 255);
                     self.v[x] = (result & 0xFF) as u8;
                 }
-                5 => {
+                0x5 => {
                     let flag = self.v[x] > self.v[y];
                     self.v[0xF] = u8::from(flag);
                     self.v[x] = self.v[x].wrapping_sub(self.v[y]);
                 }
-                6 => {
+                0x6 => {
                     let bit = self.v[x] & 0b00000001;
                     self.v[0xF] = u8::from(bit);
                     self.v[x] >>= 1;
                 }
-                7 => {
+                0x7 => {
                     let flag = self.v[y] > self.v[x];
                     self.v[0xF] = u8::from(flag);
                     self.v[x] = self.v[y].wrapping_sub(self.v[x]);
@@ -161,14 +163,15 @@ impl CPU {
             },
             0x9 => {
                 if self.v[x] != self.v[y] {
-                    self.pc += 2;
+                    self.advance_pc();
                 }
             }
             0xA => {
                 self.i = nnn;
             }
             0xB => {
-                self.pc = nnn + (self.v[0] as u16);
+                // Overrides increment
+                self.pc = nnn.wrapping_add(self.v[0] as u16);
             }
             0xC => {
                 let random = rng.random::<u8>();
@@ -199,13 +202,13 @@ impl CPU {
                 0x9E => {
                     let key = keyboard.get_pressed_key() as u8;
                     if self.v[x] == key {
-                        self.pc += 2;
+                        self.advance_pc();
                     }
                 }
                 0xA1 => {
                     let key = keyboard.get_pressed_key() as u8;
                     if self.v[x] != key {
-                        self.pc += 2;
+                        self.advance_pc();
                     }
                 }
                 _ => return error,
