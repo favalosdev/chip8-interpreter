@@ -244,13 +244,13 @@ impl CPU {
                 0x55 => {
                     let start = self.i as usize;
                     for (j, register) in self.v.iter().enumerate() {
-                        memory.write_byte(start + i, *register);
+                        memory.write_byte(start + j, *register);
                     }
                 }
                 0x65 => {
                     let start = self.i as usize;
                     for (j, register) in self.v.iter_mut().enumerate() {
-                        *register = memory.read_byte(start + i);
+                        *register = memory.read_byte(start + j);
                     }
                 }
                 _ => return error,
