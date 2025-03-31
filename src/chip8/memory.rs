@@ -21,4 +21,8 @@ impl Memory {
             self.memory[0x200 + i] = byte;
         }
     }
+
+    pub fn write_byte(&mut self, address: usize, byte: u8) {
+        self.memory[address] = byte;
+    }
 }

@@ -66,7 +66,7 @@ fn main() -> Result<(), String> {
 
         if now.duration_since(last_cpu_tick) >= Duration::from_nanos(1_000_000_000 / CPU_FREQUENCY)
         {
-            if let Err(e) = cpu.step(&mut memory, &mut display) {
+            if let Err(e) = cpu.step(&mut memory, &mut display, &keyboard) {
                 eprintln!("CPU error: {}", e);
                 break 'main;
             }

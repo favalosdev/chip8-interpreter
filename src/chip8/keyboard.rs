@@ -44,4 +44,16 @@ impl Keyboard {
             self.keys[key] = false;
         }
     }
+
+    pub fn get_pressed_key(&self) -> usize {
+        let size: usize = self.keys.len();
+
+        for i in 1..size {
+            if self.keys[i] {
+                return i;
+            }
+        }
+
+        return 0;
+    }
 }

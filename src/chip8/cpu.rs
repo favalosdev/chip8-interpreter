@@ -1,4 +1,4 @@
-use super::{constants::*, display::Display, memory::Memory, utils::beep};
+use super::{constants::*, display::Display, keyboard::Keyboard, memory::Memory, utils::beep};
 use rand::prelude::*;
 use std::thread;
 
@@ -27,11 +27,14 @@ impl CPU {
         }
     }
 
-    pub fn step(&mut self, memory: &mut Memory, display: &mut Display) -> Result<(), String> {
-        // Fetch
+    pub fn step(
+        &mut self,
+        memory: &mut Memory,
+        display: &mut Display,
+        keyboard: &Keyboard,
+    ) -> Result<(), String> {
         let opcode = self.fetch(memory);
-        // Decode and Execute
-        self.execute(opcode, memory, display)
+        return self.execute(opcode, memory, display, keyboard);
     }
 
     pub fn update_timers(&mut self) {
@@ -58,6 +61,7 @@ impl CPU {
         opcode: u16,
         memory: &mut Memory,
         display: &mut Display,
+        keyboard: &Keyboard,
     ) -> Result<(), String> {
         // Decode opcode parts
         let opcode_class = (opcode & 0xF000) >> 12;
@@ -85,7 +89,6 @@ impl CPU {
                 }
             }
             0x1 => {
-                // Jump to address
                 self.pc = nnn;
             }
             0x2 => {
@@ -111,12 +114,10 @@ impl CPU {
                 _ => return error,
             },
             0x6 => {
-                // Set VX to NN
                 self.v[x] = nn;
             }
             0x7 => {
-                // Add NN to VX
-                self.v[x] = self.v[x].wrapping_add(nn);
+                self.v[x] += nn;
             }
             0x8 => match n {
                 0 => {
@@ -132,19 +133,29 @@ impl CPU {
                     self.v[x] = self.v[x] ^ self.v[y];
                 }
                 4 => {
-                    // PENDING
+                    let result = (self.v[x] + self.v[y]) as u16;
+                    self.v[0xF] = u8::from(result > 255);
+                    self.v[x] = (result & 0xFF) as u8;
                 }
                 5 => {
-                    // PENDING
+                    let flag = self.v[x] > self.v[y];
+                    self.v[0xF] = u8::from(flag);
+                    self.v[x] = self.v[x].wrapping_sub(self.v[y]);
                 }
                 6 => {
-                    // PENDING
+                    let bit = self.v[x] & 0b00000001;
+                    self.v[0xF] = u8::from(bit);
+                    self.v[x] >>= 1;
                 }
                 7 => {
-                    // PENDING
+                    let flag = self.v[y] > self.v[x];
+                    self.v[0xF] = u8::from(flag);
+                    self.v[x] = self.v[y].wrapping_sub(self.v[x]);
                 }
                 0xE => {
-                    // PENDING
+                    let bit = self.v[x] & 0b10000000;
+                    self.v[0xF] = u8::from(bit);
+                    self.v[x] = self.v[x].wrapping_mul(2);
                 }
                 _ => return error,
             },
@@ -154,7 +165,6 @@ impl CPU {
                 }
             }
             0xA => {
-                // Set I to NNN
                 self.i = nnn;
             }
             0xB => {
@@ -187,16 +197,26 @@ impl CPU {
             }
             0xE => match nn {
                 0x9E => {
-                    // PENDING
+                    let key = keyboard.get_pressed_key() as u8;
+                    if self.v[x] == key {
+                        self.pc += 2;
+                    }
                 }
                 0xA1 => {
-                    // PENDING
+                    let key = keyboard.get_pressed_key() as u8;
+                    if self.v[x] != key {
+                        self.pc += 2;
+                    }
                 }
                 _ => return error,
             },
             0xF => match nn {
-                0x07 => {}
-                0x0A => {}
+                0x07 => {
+                    self.v[x] = self.delay_timer;
+                }
+                0x0A => {
+                    // FROG: all execution stops until a key is pressed
+                }
                 0x15 => {
                     self.delay_timer = self.v[x];
                 }
@@ -207,20 +227,32 @@ impl CPU {
                     self.i = self.i.wrapping_add(self.v[x] as u16);
                 }
                 0x29 => {
-                    // PENDING
+                    // FROG: location of sprite for digit Vx
                 }
                 0x33 => {
-                    // PENDING
+                    let hundreds = self.v[x] / 100;
+                    let tens = (self.v[x] / 10) % 10;
+                    let ones = self.v[x] % 10;
+
+                    memory.write_byte(self.i as usize, hundreds);
+                    memory.write_byte((self.i + 1) as usize, tens);
+                    memory.write_byte((self.i + 2) as usize, ones);
                 }
                 0x55 => {
-                    // PENDING
+                    let start = self.i as usize;
+                    for (i, register) in self.v.iter().enumerate() {
+                        memory.write_byte(start + i, *register);
+                    }
                 }
                 0x65 => {
-                    // PENDING
+                    let start = self.i as usize;
+                    for (i, register) in self.v.iter_mut().enumerate() {
+                        *register = memory.read_byte(start + i);
+                    }
                 }
                 _ => return error,
             },
-            _ => return Err(format!("Unimplemented opcode: {:#06X}", opcode)),
+            _ => return error,
         }
         Ok(())
     }
