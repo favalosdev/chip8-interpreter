@@ -1,4 +1,5 @@
 use super::{constants::*, display::Display, memory::Memory, utils::beep};
+use rand::prelude::*;
 use std::thread;
 
 pub struct CPU {
@@ -69,6 +70,9 @@ impl CPU {
         // Increment PC by default (some instructions will override this)
         self.pc += 2;
 
+        let error: Result<(), String> = Err(format!("Unknown opcode: {:#06X}", opcode));
+        let mut rng = rand::rng();
+
         match opcode_class {
             0x0 => {
                 match opcode {
@@ -77,13 +81,35 @@ impl CPU {
                         // Return from subroutine
                         self.pc = self.stack.pop().ok_or("Stack underflow")?;
                     }
-                    _ => return Err(format!("Unknown opcode: {:#06X}", opcode)),
+                    _ => return error,
                 }
             }
             0x1 => {
                 // Jump to address
                 self.pc = nnn;
             }
+            0x2 => {
+                self.stack.push(self.pc);
+                self.pc = nnn;
+            }
+            0x3 => {
+                if self.v[x] == nn {
+                    self.pc += 2;
+                }
+            }
+            0x4 => {
+                if self.v[x] != nn {
+                    self.pc += 2;
+                }
+            }
+            0x5 => match n {
+                0 => {
+                    if self.v[x] == self.v[y] {
+                        self.pc += 2;
+                    }
+                }
+                _ => return error,
+            },
             0x6 => {
                 // Set VX to NN
                 self.v[x] = nn;
@@ -92,9 +118,51 @@ impl CPU {
                 // Add NN to VX
                 self.v[x] = self.v[x].wrapping_add(nn);
             }
+            0x8 => match n {
+                0 => {
+                    self.v[x] = self.v[y];
+                }
+                1 => {
+                    self.v[x] = self.v[x] | self.v[y];
+                }
+                2 => {
+                    self.v[x] = self.v[x] & self.v[y];
+                }
+                3 => {
+                    self.v[x] = self.v[x] ^ self.v[y];
+                }
+                4 => {
+                    // PENDING
+                }
+                5 => {
+                    // PENDING
+                }
+                6 => {
+                    // PENDING
+                }
+                7 => {
+                    // PENDING
+                }
+                0xE => {
+                    // PENDING
+                }
+                _ => return error,
+            },
+            0x9 => {
+                if self.v[x] != self.v[y] {
+                    self.pc += 2;
+                }
+            }
             0xA => {
                 // Set I to NNN
                 self.i = nnn;
+            }
+            0xB => {
+                self.pc = nnn + (self.v[0] as u16);
+            }
+            0xC => {
+                let random = rng.random::<u8>();
+                self.v[x] = random & nn;
             }
             0xD => {
                 // Display/draw
@@ -117,9 +185,43 @@ impl CPU {
                     }
                 }
             }
+            0xE => match nn {
+                0x9E => {
+                    // PENDING
+                }
+                0xA1 => {
+                    // PENDING
+                }
+                _ => return error,
+            },
+            0xF => match nn {
+                0x07 => {}
+                0x0A => {}
+                0x15 => {
+                    self.delay_timer = self.v[x];
+                }
+                0x18 => {
+                    self.sound_timer = self.v[x];
+                }
+                0x1E => {
+                    self.i = self.i.wrapping_add(self.v[x] as u16);
+                }
+                0x29 => {
+                    // PENDING
+                }
+                0x33 => {
+                    // PENDING
+                }
+                0x55 => {
+                    // PENDING
+                }
+                0x65 => {
+                    // PENDING
+                }
+                _ => return error,
+            },
             _ => return Err(format!("Unimplemented opcode: {:#06X}", opcode)),
         }
-
         Ok(())
     }
 }
