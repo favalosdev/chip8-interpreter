@@ -27,7 +27,7 @@ impl CPU {
         &mut self,
         memory: &mut Memory,
         display: &mut Display,
-        keyboard: &Keyboard,
+        keyboard: &mut Keyboard,
     ) -> Result<(), String> {
         let opcode = self.fetch(memory);
         self.execute(opcode, memory, display, keyboard)
@@ -61,7 +61,7 @@ impl CPU {
         opcode: u16,
         memory: &mut Memory,
         display: &mut Display,
-        keyboard: &Keyboard,
+        keyboard: &mut Keyboard,
     ) -> Result<(), String> {
         // Decode opcode parts
         let opcode_class = (opcode & 0xF000) >> 12;
@@ -216,7 +216,8 @@ impl CPU {
                     self.v[x] = self.delay_timer;
                 }
                 0x0A => {
-                    // TODO: Pending
+                    let pressed = keyboard.wait_until_press();
+                    self.v[x] = pressed;
                 }
                 0x15 => {
                     self.delay_timer = self.v[x];

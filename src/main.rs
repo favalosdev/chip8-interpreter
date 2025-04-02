@@ -1,6 +1,4 @@
 use chip8::constants::SDL_FREQUENCY;
-use sdl2::event::Event;
-use sdl2::keyboard::Keycode;
 use std::env;
 use std::fs::File;
 use std::io::Read;
@@ -33,13 +31,13 @@ fn main() -> Result<(), String> {
         .map_err(|e| e.to_string())?;
 
     let mut canvas = window.into_canvas().build().map_err(|e| e.to_string())?;
-    let mut event_pump = sdl_context.event_pump()?;
+    let event_pump = sdl_context.event_pump()?;
 
     // Initialize CHIP-8 components
     let mut cpu = CPU::new();
     let mut memory = Memory::new();
     let mut display = Display::new();
-    let mut keyboard = Keyboard::new();
+    let mut keyboard = Keyboard::new(event_pump);
 
     let mut rom_file = File::open(rom_path).map_err(|e| e.to_string())?;
     let mut rom_data = Vec::new();
@@ -66,7 +64,7 @@ fn main() -> Result<(), String> {
 
         if now.duration_since(last_cpu_tick) >= Duration::from_nanos(1_000_000_000 / CPU_FREQUENCY)
         {
-            if let Err(e) = cpu.step(&mut memory, &mut display, &keyboard) {
+            if let Err(e) = cpu.step(&mut memory, &mut display, &mut keyboard) {
                 eprintln!("CPU error: {}", e);
                 break 'main;
             }
@@ -77,26 +75,6 @@ fn main() -> Result<(), String> {
         if now.duration_since(last_frame_draw)
             >= Duration::from_nanos(1_000_000_000 / SDL_FREQUENCY)
         {
-            for event in event_pump.poll_iter() {
-                match event {
-                    Event::Quit { .. }
-                    | Event::KeyDown {
-                        keycode: Some(Keycode::Escape),
-                        ..
-                    } => break 'main,
-                    Event::KeyDown {
-                        scancode: Some(scancode),
-                        ..
-                    } => keyboard.press_key(scancode),
-                    Event::KeyUp {
-                        scancode: Some(scancode),
-                        ..
-                    } => keyboard.release_key(scancode),
-                    _ => {}
-                }
-            }
-
-            // Render display
             if display.changed {
                 canvas.set_draw_color(sdl2::pixels::Color::RGB(0, 0, 0));
                 canvas.clear();

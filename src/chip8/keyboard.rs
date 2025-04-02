@@ -1,64 +1,72 @@
-use sdl2::keyboard::Scancode;
+use sdl2::{event::Event, keyboard::Scancode, EventPump};
 use std::collections::HashMap;
 
-// TODO: Re-write keyboard implementation
 pub struct Keyboard {
-    key_map: HashMap<Scancode, usize>,
-    pub keys: [bool; 16],
+    hex_to_scan: HashMap<u8, Scancode>,
+    scan_to_hex: HashMap<Scancode, u8>,
+    event_pump: EventPump,
 }
 
 impl Keyboard {
-    pub fn new() -> Self {
-        let mut key_map = HashMap::new();
+    pub fn new(event_pump: EventPump) -> Self {
+        let mut hex_to_scan = HashMap::new();
+        let mut scan_to_hex = HashMap::new();
 
-        key_map.insert(Scancode::Num1, 0x1);
-        key_map.insert(Scancode::Num2, 0x2);
-        key_map.insert(Scancode::Num3, 0x3);
-        key_map.insert(Scancode::Num4, 0xC);
-        key_map.insert(Scancode::Q, 0x4);
-        key_map.insert(Scancode::W, 0x5);
-        key_map.insert(Scancode::E, 0x6);
-        key_map.insert(Scancode::R, 0xD);
-        key_map.insert(Scancode::A, 0x7);
-        key_map.insert(Scancode::S, 0x8);
-        key_map.insert(Scancode::D, 0x9);
-        key_map.insert(Scancode::F, 0xE);
-        key_map.insert(Scancode::Z, 0xA);
-        key_map.insert(Scancode::X, 0x0);
-        key_map.insert(Scancode::C, 0xB);
-        key_map.insert(Scancode::V, 0xF);
+        let mappings = [
+            (0x0, Scancode::X),
+            (0x1, Scancode::Num1),
+            (0x2, Scancode::Num2),
+            (0x3, Scancode::Num3),
+            (0x4, Scancode::Q),
+            (0x5, Scancode::W),
+            (0x6, Scancode::E),
+            (0x7, Scancode::A),
+            (0x8, Scancode::S),
+            (0x9, Scancode::D),
+            (0xA, Scancode::Z),
+            (0xB, Scancode::C),
+            (0xC, Scancode::Num4),
+            (0xD, Scancode::R),
+            (0xE, Scancode::F),
+            (0xF, Scancode::V),
+        ];
+
+        for &(hex, scan) in &mappings {
+            hex_to_scan.insert(hex, scan);
+            scan_to_hex.insert(scan, hex);
+        }
 
         Self {
-            key_map,
-            keys: [false; 16],
-        }
-    }
-
-    pub fn press_key(&mut self, scancode: Scancode) {
-        if let Some(&key) = self.key_map.get(&scancode) {
-            self.keys[key] = true;
-        }
-    }
-
-    pub fn release_key(&mut self, scancode: Scancode) {
-        if let Some(&key) = self.key_map.get(&scancode) {
-            self.keys[key] = false;
+            hex_to_scan,
+            scan_to_hex,
+            event_pump,
         }
     }
 
     pub fn is_key_pressed(&self, value: u8) -> bool {
         if value <= 0xF {
-            return self.keys[value as usize];
+            return self.hex_to_scan.get(&value).map_or(false, |p| {
+                self.event_pump.keyboard_state().is_scancode_pressed(*p)
+            });
         }
         false
     }
 
-    pub fn is_any_key_pressed(&self) -> bool {
-        for status in self.keys {
-            if status {
-                return status;
+    pub fn wait_until_press(&mut self) -> u8 {
+        for event in self.event_pump.poll_iter() {
+            match event {
+                Event::KeyDown {
+                    scancode: Some(scancode),
+                    ..
+                } => {
+                    let code = self.scan_to_hex.get(&scancode).unwrap_or(&0);
+                    return *code;
+                }
+                _ => {}
             }
         }
-        false
+
+        // Should never happen
+        return 0;
     }
 }
