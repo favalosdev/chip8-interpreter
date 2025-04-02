@@ -1,3 +1,5 @@
+use super::constants::{FONT_DATA_START_ADDRESS, PROGRAM_START_ADDRESS};
+
 pub struct Memory {
     memory: [u8; 4096],
 }
@@ -7,7 +9,7 @@ impl Memory {
         let mut memory = Self { memory: [0; 4096] };
         // Load fontset
         for (i, &byte) in super::constants::FONT_SET.iter().enumerate() {
-            memory.memory[0x50 + i] = byte;
+            memory.memory[(FONT_DATA_START_ADDRESS as usize) + i] = byte;
         }
         memory
     }
@@ -18,7 +20,7 @@ impl Memory {
 
     pub fn load_rom(&mut self, data: &[u8]) {
         for (i, &byte) in data.iter().enumerate() {
-            self.memory[0x200 + i] = byte;
+            self.memory[(PROGRAM_START_ADDRESS as usize) + i] = byte;
         }
     }
 

@@ -1,6 +1,7 @@
 use sdl2::keyboard::Scancode;
 use std::collections::HashMap;
 
+// TODO: Re-write keyboard implementation
 pub struct Keyboard {
     key_map: HashMap<Scancode, usize>,
     pub keys: [bool; 16],
@@ -45,15 +46,19 @@ impl Keyboard {
         }
     }
 
-    pub fn get_pressed_key(&self) -> usize {
-        let size: usize = self.keys.len();
+    pub fn is_key_pressed(&self, value: u8) -> bool {
+        if value <= 0xF {
+            return self.keys[value as usize];
+        }
+        false
+    }
 
-        for i in 1..size {
-            if self.keys[i] {
-                return i;
+    pub fn is_any_key_pressed(&self) -> bool {
+        for status in self.keys {
+            if status {
+                return status;
             }
         }
-
-        return 0;
+        false
     }
 }

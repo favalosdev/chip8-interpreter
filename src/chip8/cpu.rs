@@ -14,7 +14,7 @@ pub struct CPU {
 impl CPU {
     pub fn new() -> Self {
         Self {
-            pc: 0x200,
+            pc: PROGRAM_START_ADDRESS,
             v: [0; 16],
             i: 0,
             stack: Vec::new(),
@@ -137,7 +137,7 @@ impl CPU {
                 0x4 => {
                     let result = (self.v[x] as u16).wrapping_add(self.v[y] as u16);
                     self.v[0xF] = u8::from(result > 255);
-                    self.v[x] = (result & 0xFF) as u8;
+                    self.v[x] = (result & 0x00FF) as u8;
                 }
                 0x5 => {
                     let flag = self.v[x] > self.v[y];
@@ -200,14 +200,12 @@ impl CPU {
             }
             0xE => match nn {
                 0x9E => {
-                    let key = keyboard.get_pressed_key() as u8;
-                    if self.v[x] == key {
+                    if keyboard.is_key_pressed(self.v[x]) {
                         self.advance_pc();
                     }
                 }
                 0xA1 => {
-                    let key = keyboard.get_pressed_key() as u8;
-                    if self.v[x] != key {
+                    if !keyboard.is_key_pressed(self.v[x]) {
                         self.advance_pc();
                     }
                 }
@@ -218,7 +216,7 @@ impl CPU {
                     self.v[x] = self.delay_timer;
                 }
                 0x0A => {
-                    // FROG: all execution stops until a key is pressed
+                    // TODO: Pending
                 }
                 0x15 => {
                     self.delay_timer = self.v[x];
@@ -230,7 +228,8 @@ impl CPU {
                     self.i = self.i.wrapping_add(self.v[x] as u16);
                 }
                 0x29 => {
-                    // FROG: location of sprite for digit Vx
+                    let hex = (self.v[x] & 0x0F) as u16;
+                    self.i = (FONT_DATA_START_ADDRESS as u16) + 5 * hex;
                 }
                 0x33 => {
                     let hundreds = self.v[x] / 100;
