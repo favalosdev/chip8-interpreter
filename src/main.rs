@@ -52,18 +52,19 @@ fn main() -> Result<(), String> {
     let mut last_cpu_tick = Instant::now();
     let mut last_frame_draw = Instant::now();
 
+    let timers_interval = Duration::from_nanos(1_000_000_000 / TIMER_DECREASE_FREQUENCY);
+    let cpu_interval = Duration::from_nanos(1_000_000_000 / CPU_FREQUENCY);
+    let sdl_interval = Duration::from_nanos(1_000_000_000 / SDL_FREQUENCY);
+
     'main: loop {
         let now = Instant::now();
 
-        if now.duration_since(last_timers_tick)
-            >= Duration::from_nanos(1_000_000_000 / TIMER_DECREASE_FREQUENCY)
-        {
+        if now.duration_since(last_timers_tick) >= timers_interval {
             cpu.update_timers();
             last_timers_tick = now;
         }
 
-        if now.duration_since(last_cpu_tick) >= Duration::from_nanos(1_000_000_000 / CPU_FREQUENCY)
-        {
+        if now.duration_since(last_cpu_tick) >= cpu_interval {
             if let Err(e) = cpu.step(&mut memory, &mut display, &mut keyboard) {
                 eprintln!("CPU error: {}", e);
                 break 'main;
@@ -72,9 +73,7 @@ fn main() -> Result<(), String> {
             last_cpu_tick = now;
         }
 
-        if now.duration_since(last_frame_draw)
-            >= Duration::from_nanos(1_000_000_000 / SDL_FREQUENCY)
-        {
+        if now.duration_since(last_frame_draw) >= sdl_interval {
             if display.changed {
                 canvas.set_draw_color(sdl2::pixels::Color::RGB(0, 0, 0));
                 canvas.clear();
