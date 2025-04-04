@@ -1,3 +1,5 @@
+use sdl2::keyboard::Scancode;
+
 pub const ORIGINAL_WIDTH: u32 = 64;
 pub const ORIGINAL_HEIGHT: u32 = 32;
 pub const SCALE_FACTOR: u32 = 10;
@@ -31,3 +33,22 @@ pub const FONT_SET: [u8; 80] = [
 
 pub const FONT_DATA_START_ADDRESS: u16 = 0x50;
 pub const PROGRAM_START_ADDRESS: u16 = 0x200;
+
+pub const VALUE_KEY_MAP: [(u8, Scancode); 16] = [
+    (0x0, Scancode::X),
+    (0x1, Scancode::Num1),
+    (0x2, Scancode::Num2),
+    (0x3, Scancode::Num3),
+    (0x4, Scancode::Q),
+    (0x5, Scancode::W),
+    (0x6, Scancode::E),
+    (0x7, Scancode::A),
+    (0x8, Scancode::S),
+    (0x9, Scancode::D),
+    (0xA, Scancode::Z),
+    (0xB, Scancode::C),
+    (0xC, Scancode::Num4),
+    (0xD, Scancode::R),
+    (0xE, Scancode::F),
+    (0xF, Scancode::V),
+];
