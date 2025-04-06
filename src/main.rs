@@ -99,11 +99,32 @@ fn main() -> Result<(), String> {
                     Event::KeyDown {
                         scancode: Some(code),
                         ..
-                    } => {
+                    } if matches!(
+                        code,
+                        Scancode::Num1
+                            | Scancode::Num2
+                            | Scancode::Num3
+                            | Scancode::Num4
+                            | Scancode::Q
+                            | Scancode::W
+                            | Scancode::E
+                            | Scancode::R
+                            | Scancode::A
+                            | Scancode::S
+                            | Scancode::D
+                            | Scancode::F
+                            | Scancode::Z
+                            | Scancode::X
+                            | Scancode::C
+                            | Scancode::V
+                    ) =>
+                    {
+                        println!("Key pressed: {:?}, hex: {:?}", code, scan_to_hex.get(&code));
                         keyboard_state.last_key_pressed = Some(code);
-                        keyboard_state.last_hex = scan_to_hex.get(&code).map(|x| *x);
+                        keyboard_state.last_hex = scan_to_hex.get(&code).copied();
 
                         if keyboard_state.waiting_for_key {
+                            println!("Detected key while waiting for input");
                             keyboard_state.waiting_for_key = false;
                         }
                     }
