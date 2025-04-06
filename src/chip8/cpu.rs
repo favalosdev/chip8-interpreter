@@ -146,7 +146,7 @@ impl CPU {
                 }
                 0x6 => {
                     let bit = self.v[x] & 0b00000001;
-                    self.v[0xF] = u8::from(bit);
+                    self.v[0xF] = u8::from(bit == 1);
                     self.v[x] >>= 1;
                 }
                 0x7 => {
@@ -156,8 +156,8 @@ impl CPU {
                 }
                 0xE => {
                     let bit = self.v[x] & 0b10000000;
-                    self.v[0xF] = u8::from(bit);
-                    self.v[x] = self.v[x].wrapping_mul(2);
+                    self.v[0xF] = u8::from(bit == 1);
+                    self.v[x] <<= 1;
                 }
                 _ => return error,
             },
@@ -254,13 +254,21 @@ impl CPU {
                 0x55 => {
                     let start = self.i as usize;
                     for (j, register) in self.v.iter().enumerate() {
-                        memory.write_byte(start + j, *register);
+                        if j <= x {
+                            memory.write_byte(start + j, *register);
+                        } else {
+                            break;
+                        }
                     }
                 }
                 0x65 => {
                     let start = self.i as usize;
                     for (j, register) in self.v.iter_mut().enumerate() {
-                        *register = memory.read_byte(start + j);
+                        if j <= x {
+                            *register = memory.read_byte(start + j);
+                        } else {
+                            break;
+                        }
                     }
                 }
                 _ => return error,
