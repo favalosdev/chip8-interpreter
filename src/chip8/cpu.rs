@@ -126,38 +126,38 @@ impl CPU {
                     self.v[x] = self.v[y];
                 }
                 0x1 => {
-                    self.v[x] = self.v[x] | self.v[y];
+                    self.v[x] |= self.v[y];
                 }
                 0x2 => {
-                    self.v[x] = self.v[x] & self.v[y];
+                    self.v[x] &= self.v[y];
                 }
                 0x3 => {
-                    self.v[x] = self.v[x] ^ self.v[y];
+                    self.v[x] ^= self.v[y];
                 }
                 0x4 => {
-                    let result = (self.v[x] as u16).wrapping_add(self.v[y] as u16);
-                    self.v[0xF] = u8::from(result > 255);
-                    self.v[x] = (result & 0x00FF) as u8;
+                    let (result, overflow) = self.v[x].overflowing_add(self.v[y]);
+                    self.v[x] = result;
+                    self.v[0xF] = u8::from(overflow);
                 }
                 0x5 => {
-                    let flag = self.v[x] > self.v[y];
-                    self.v[0xF] = u8::from(flag);
-                    self.v[x] = self.v[x].wrapping_sub(self.v[y]);
+                    let (result, borrow) = self.v[x].overflowing_sub(self.v[y]);
+                    self.v[x] = result;
+                    self.v[0xF] = u8::from(!borrow);
                 }
                 0x6 => {
-                    let bit = self.v[x] & 0b00000001;
-                    self.v[0xF] = u8::from(bit == 1);
+                    let prev = self.v[x];
                     self.v[x] >>= 1;
+                    self.v[0xF] = prev & 1;
                 }
                 0x7 => {
-                    let flag = self.v[y] > self.v[x];
-                    self.v[0xF] = u8::from(flag);
-                    self.v[x] = self.v[y].wrapping_sub(self.v[x]);
+                    let (result, borrow) = self.v[y].overflowing_sub(self.v[x]);
+                    self.v[x] = result;
+                    self.v[0xF] = u8::from(!borrow);
                 }
                 0xE => {
-                    let bit = self.v[x] & 0b10000000;
-                    self.v[0xF] = u8::from(bit == 1);
+                    let prev = self.v[x];
                     self.v[x] <<= 1;
+                    self.v[0xF] = (prev >> 7) & 1;
                 }
                 _ => return error,
             },
@@ -178,7 +178,6 @@ impl CPU {
                 self.v[x] = random & nn;
             }
             0xD => {
-                // Display/draw
                 self.v[0xF] = 0;
                 let x_coord = self.v[x] as usize % ORIGINAL_WIDTH as usize;
                 let y_coord = self.v[y] as usize % ORIGINAL_HEIGHT as usize;
