@@ -1,6 +1,6 @@
 use chip8::constants::{SDL_FREQUENCY, VALUE_KEY_MAP};
 use chip8::utils::KeyboardState;
-use sdl2::{event::Event, keyboard::Keycode, keyboard::Scancode};
+use sdl2::{event::Event, keyboard::Scancode};
 use std::collections::HashMap;
 use std::env;
 use std::fs::File;
@@ -93,7 +93,7 @@ fn main() -> Result<(), String> {
                 match event {
                     Event::Quit { .. }
                     | Event::KeyDown {
-                        keycode: Some(Keycode::Escape),
+                        scancode: Some(Scancode::Escape),
                         ..
                     } => break 'main,
                     Event::KeyDown {
