@@ -253,22 +253,14 @@ impl CPU {
                 }
                 0x55 => {
                     let start = self.i as usize;
-                    for (j, register) in self.v.iter().enumerate() {
-                        if j <= x {
-                            memory.write_byte(start + j, *register);
-                        } else {
-                            break;
-                        }
+                    for j in 0..=x {
+                        memory.write_byte(start + j, self.v[j]);
                     }
                 }
                 0x65 => {
                     let start = self.i as usize;
-                    for (j, register) in self.v.iter_mut().enumerate() {
-                        if j <= x {
-                            *register = memory.read_byte(start + j);
-                        } else {
-                            break;
-                        }
+                    for j in 0..=x {
+                        self.v[j] = memory.read_byte(start + j);
                     }
                 }
                 _ => return error,
