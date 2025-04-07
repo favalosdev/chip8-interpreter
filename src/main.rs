@@ -1,7 +1,4 @@
-use chip8::constants::{SDL_FREQUENCY, VALUE_KEY_MAP};
-use chip8::utils::KeyboardState;
 use sdl2::{event::Event, keyboard::Scancode};
-use std::collections::HashMap;
 use std::env;
 use std::fs::File;
 use std::io::Read;
@@ -9,12 +6,14 @@ use std::time::{Duration, Instant};
 
 use chip8::{
     constants::{
-        CPU_FREQUENCY, ORIGINAL_HEIGHT, ORIGINAL_WIDTH, SCALE_FACTOR, TIMER_DECREASE_FREQUENCY,
-        WINDOW_HEIGHT, WINDOW_WIDTH,
+        CPU_FREQUENCY, ORIGINAL_HEIGHT, ORIGINAL_WIDTH, SCALE_FACTOR, SDL_FREQUENCY,
+        TIMER_DECREASE_FREQUENCY, WINDOW_HEIGHT, WINDOW_WIDTH,
     },
     cpu::CPU,
     display::Display,
+    keyboard::Keyboard,
     memory::Memory,
+    utils::is_valid_key,
 };
 
 mod chip8;
@@ -35,16 +34,11 @@ fn main() -> Result<(), String> {
     let mut canvas = window.into_canvas().build().unwrap();
     let mut event_pump = sdl_context.event_pump().unwrap();
 
-    let mut keyboard_state: KeyboardState = KeyboardState {
-        last_key_pressed: None,
-        last_hex: None,
-        waiting_for_key: false,
-    };
-
     // Initialize CHIP-8 components
     let mut cpu = CPU::new();
     let mut memory = Memory::new();
     let mut display = Display::new();
+    let mut keyboard = Keyboard::new();
 
     let mut rom_file = File::open(rom_path).map_err(|e| e.to_string())?;
     let mut rom_data = Vec::new();
@@ -63,14 +57,6 @@ fn main() -> Result<(), String> {
     let cpu_interval = Duration::from_nanos(1_000_000_000 / CPU_FREQUENCY);
     let sdl_interval = Duration::from_nanos(1_000_000_000 / SDL_FREQUENCY);
 
-    let scan_to_hex: HashMap<Scancode, u8> = {
-        let mut map = HashMap::new();
-        for &(hex, scan) in &VALUE_KEY_MAP {
-            map.insert(scan, hex);
-        }
-        map
-    };
-
     'main: loop {
         let now = Instant::now();
 
@@ -80,7 +66,7 @@ fn main() -> Result<(), String> {
         }
 
         if now.duration_since(last_cpu_tick) >= cpu_interval {
-            if let Err(e) = cpu.step(&mut memory, &mut display, &mut keyboard_state) {
+            if let Err(e) = cpu.step(&mut memory, &mut display, &mut keyboard) {
                 eprintln!("CPU error: {}", e);
                 break 'main;
             }
@@ -99,34 +85,14 @@ fn main() -> Result<(), String> {
                     Event::KeyDown {
                         scancode: Some(code),
                         ..
-                    } if matches!(
-                        code,
-                        Scancode::Num1
-                            | Scancode::Num2
-                            | Scancode::Num3
-                            | Scancode::Num4
-                            | Scancode::Q
-                            | Scancode::W
-                            | Scancode::E
-                            | Scancode::R
-                            | Scancode::A
-                            | Scancode::S
-                            | Scancode::D
-                            | Scancode::F
-                            | Scancode::Z
-                            | Scancode::X
-                            | Scancode::C
-                            | Scancode::V
-                    ) =>
-                    {
-                        println!("Key pressed: {:?}, hex: {:?}", code, scan_to_hex.get(&code));
-                        keyboard_state.last_key_pressed = Some(code);
-                        keyboard_state.last_hex = scan_to_hex.get(&code).copied();
-
-                        if keyboard_state.waiting_for_key {
-                            println!("Detected key while waiting for input");
-                            keyboard_state.waiting_for_key = false;
-                        }
+                    } if is_valid_key(code) => {
+                        keyboard.press_key(code);
+                    }
+                    Event::KeyUp {
+                        scancode: Some(code),
+                        ..
+                    } if is_valid_key(code) => {
+                        keyboard.release_key(code);
                     }
                     _ => {}
                 }

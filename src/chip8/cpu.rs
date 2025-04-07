@@ -1,4 +1,4 @@
-use super::{constants::*, display::Display, memory::Memory, utils::beep, utils::KeyboardState};
+use super::{constants::*, display::Display, keyboard::Keyboard, memory::Memory, utils::beep};
 use rand::prelude::*;
 use std::thread;
 
@@ -44,10 +44,10 @@ impl CPU {
         &mut self,
         memory: &mut Memory,
         display: &mut Display,
-        keyboard_state: &mut KeyboardState,
+        keyboard: &mut Keyboard,
     ) -> Result<(), String> {
         let opcode = self.fetch(memory);
-        self.execute(opcode, memory, display, keyboard_state)
+        self.execute(opcode, memory, display, keyboard)
     }
 
     fn fetch(&self, memory: &Memory) -> u16 {
@@ -61,7 +61,7 @@ impl CPU {
         opcode: u16,
         memory: &mut Memory,
         display: &mut Display,
-        keyboard_state: &mut KeyboardState,
+        keyboard: &mut Keyboard,
     ) -> Result<(), String> {
         // Decode opcode parts
         let opcode_class = (opcode & 0xF000) >> 12;
@@ -199,17 +199,13 @@ impl CPU {
             }
             0xE => match nn {
                 0x9E => {
-                    if let Some(hex) = keyboard_state.last_hex {
-                        if hex == self.v[x] {
-                            self.advance_pc();
-                        }
+                    if keyboard.is_key_pressed(self.v[x]) {
+                        self.advance_pc();
                     }
                 }
                 0xA1 => {
-                    if let Some(hex) = keyboard_state.last_hex {
-                        if hex != self.v[x] {
-                            self.advance_pc();
-                        }
+                    if !keyboard.is_key_pressed(self.v[x]) {
+                        self.advance_pc();
                     }
                 }
                 _ => return error,
@@ -219,14 +215,7 @@ impl CPU {
                     self.v[x] = self.delay_timer;
                 }
                 0x0A => {
-                    keyboard_state.waiting_for_key = true;
-
-                    // This busy wait is necessary because it will be updated in the main thread
-                    while keyboard_state.waiting_for_key {}
-
-                    if let Some(hex) = keyboard_state.last_hex {
-                        self.v[x] = hex;
-                    }
+                    // TODO: Implement this tricky function
                 }
                 0x15 => {
                     self.delay_timer = self.v[x];

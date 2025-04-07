@@ -11,8 +11,24 @@ pub fn beep(frequency: u32, duration_ms: u64) {
         .expect("Failed to execute beep");
 }
 
-pub struct KeyboardState {
-    pub last_key_pressed: Option<Scancode>,
-    pub last_hex: Option<u8>,
-    pub waiting_for_key: bool,
+pub fn is_valid_key(code: Scancode) -> bool {
+    matches!(
+        code,
+        Scancode::Num1
+            | Scancode::Num2
+            | Scancode::Num3
+            | Scancode::Num4
+            | Scancode::Q
+            | Scancode::W
+            | Scancode::E
+            | Scancode::R
+            | Scancode::A
+            | Scancode::S
+            | Scancode::D
+            | Scancode::F
+            | Scancode::Z
+            | Scancode::X
+            | Scancode::C
+            | Scancode::V
+    )
 }
