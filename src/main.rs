@@ -2,6 +2,7 @@ use sdl2::{event::Event, keyboard::Scancode};
 use std::env;
 use std::fs::File;
 use std::io::Read;
+use std::sync::mpsc;
 use std::time::{Duration, Instant};
 
 use chip8::{
@@ -20,7 +21,10 @@ mod chip8;
 
 fn main() -> Result<(), String> {
     let args: Vec<String> = env::args().collect();
-    let rom_path = args.get(1).ok_or("Usage: chip8-emulator <rom_file>")?;
+    let rom_path = args
+        .get(1)
+        .ok_or("Usage: chip8-emulator <rom_file>")
+        .unwrap();
 
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
@@ -34,11 +38,13 @@ fn main() -> Result<(), String> {
     let mut canvas = window.into_canvas().build().unwrap();
     let mut event_pump = sdl_context.event_pump().unwrap();
 
+    let (key_sender, key_receiver) = mpsc::channel::<u8>();
+
     // Initialize CHIP-8 components
     let mut cpu = CPU::new();
     let mut memory = Memory::new();
     let mut display = Display::new();
-    let mut keyboard = Keyboard::new();
+    let mut keyboard = Keyboard::new(key_sender);
 
     let mut rom_file = File::open(rom_path).map_err(|e| e.to_string())?;
     let mut rom_data = Vec::new();
@@ -66,7 +72,7 @@ fn main() -> Result<(), String> {
         }
 
         if now.duration_since(last_cpu_tick) >= cpu_interval {
-            if let Err(e) = cpu.step(&mut memory, &mut display, &mut keyboard) {
+            if let Err(e) = cpu.step(&mut memory, &mut display, &mut keyboard, &key_receiver) {
                 eprintln!("CPU error: {}", e);
                 break 'main;
             }
