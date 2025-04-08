@@ -2,7 +2,6 @@ use sdl2::{event::Event, keyboard::Scancode};
 use std::env;
 use std::fs::File;
 use std::io::Read;
-use std::sync::mpsc;
 use std::time::{Duration, Instant};
 
 use chip8::{
@@ -38,13 +37,11 @@ fn main() -> Result<(), String> {
     let mut canvas = window.into_canvas().build().unwrap();
     let mut event_pump = sdl_context.event_pump().unwrap();
 
-    let (key_sender, key_receiver) = mpsc::channel::<u8>();
-
     // Initialize CHIP-8 components
     let mut cpu = CPU::new();
     let mut memory = Memory::new();
     let mut display = Display::new();
-    let mut keyboard = Keyboard::new(key_sender);
+    let mut keyboard = Keyboard::new();
 
     let mut rom_file = File::open(rom_path).map_err(|e| e.to_string())?;
     let mut rom_data = Vec::new();
@@ -72,7 +69,7 @@ fn main() -> Result<(), String> {
         }
 
         if now.duration_since(last_cpu_tick) >= cpu_interval {
-            if let Err(e) = cpu.step(&mut memory, &mut display, &mut keyboard, &key_receiver) {
+            if let Err(e) = cpu.step(&mut memory, &mut display, &mut keyboard) {
                 eprintln!("CPU error: {}", e);
                 break 'main;
             }

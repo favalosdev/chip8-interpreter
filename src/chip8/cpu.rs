@@ -1,6 +1,5 @@
 use super::{constants::*, display::Display, keyboard::Keyboard, memory::Memory, utils::beep};
 use rand::prelude::*;
-use std::sync::mpsc::Receiver;
 use std::thread;
 
 pub struct CPU {
@@ -46,10 +45,13 @@ impl CPU {
         memory: &mut Memory,
         display: &mut Display,
         keyboard: &mut Keyboard,
-        key_receiver: &Receiver<u8>,
     ) -> Result<(), String> {
-        let opcode = self.fetch(memory);
-        self.execute(opcode, memory, display, keyboard, key_receiver)
+        if !keyboard.is_waiting_for_key {
+            let opcode = self.fetch(memory);
+            return self.execute(opcode, memory, display, keyboard);
+        } else {
+            return Ok(());
+        }
     }
 
     fn fetch(&self, memory: &Memory) -> u16 {
@@ -64,7 +66,6 @@ impl CPU {
         memory: &mut Memory,
         display: &mut Display,
         keyboard: &mut Keyboard,
-        key_receiver: &Receiver<u8>,
     ) -> Result<(), String> {
         // Decode opcode parts
         let opcode_class = (opcode & 0xF000) >> 12;
@@ -76,6 +77,13 @@ impl CPU {
 
         let error: Result<(), String> = Err(format!("Unknown opcode: {:#06X}", opcode));
         let mut rng = rand::rng();
+
+        // Ugly but works
+        if let Some(key) = keyboard.last_key {
+            self.v[x] = key;
+            println!("Stored key 0x{:X} in register V{:X}", key, x);
+            keyboard.last_key = None;
+        }
 
         self.advance_pc();
 
@@ -223,24 +231,8 @@ impl CPU {
                     self.v[x] = self.delay_timer;
                 }
                 0x0A => {
-                    /*
                     println!("CPU entering key-wait state for register V{x:X}");
                     keyboard.is_waiting_for_key = true;
-
-                    println!("Waiting for key press...");
-                    while keyboard.is_waiting_for_key {
-                        // Optional: if you want to see the polling, but this might spam the console
-                        // println!("Still waiting for key...");
-                    }
-                    println!("Key-wait state ended");
-
-                    if let Some(key) = keyboard.last_key_pressed {
-                        println!("Storing key 0x{key:X} in register V{x:X}");
-                        self.v[x] = key;
-                    } else {
-                        println!("No key was recorded after key-wait ended!");
-                    }
-                    */
                 }
                 0x15 => {
                     self.delay_timer = self.v[x];
