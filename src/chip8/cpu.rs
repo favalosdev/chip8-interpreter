@@ -81,7 +81,6 @@ impl CPU {
         // Ugly but works
         if let Some(key) = keyboard.last_key {
             self.v[x] = key;
-            println!("Stored key 0x{:X} in register V{:X}", key, x);
             keyboard.last_key = None;
         }
 
@@ -231,7 +230,6 @@ impl CPU {
                     self.v[x] = self.delay_timer;
                 }
                 0x0A => {
-                    println!("CPU entering key-wait state for register V{x:X}");
                     keyboard.is_waiting_for_key = true;
                 }
                 0x15 => {

@@ -39,10 +39,7 @@ impl Keyboard {
             self.keys[key as usize] = true;
 
             if self.is_waiting_for_key {
-                println!("Key 0x{key:X} pressed during key-wait state");
                 self.last_key = Some(key);
-                println!("Stored key 0x{key:X} as last pressed key");
-                println!("Exiting key-wait state");
                 self.is_waiting_for_key = false;
             } else {
                 println!("Normal key press: 0x{key:X} (scancode: {scancode:?})");
