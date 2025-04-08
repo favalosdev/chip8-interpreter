@@ -41,11 +41,7 @@ impl Keyboard {
             if self.is_waiting_for_key {
                 self.last_key = Some(key);
                 self.is_waiting_for_key = false;
-            } else {
-                println!("Normal key press: 0x{key:X} (scancode: {scancode:?})");
             }
-        } else {
-            println!("Received unmapped scancode: {scancode:?}");
         }
     }
 
