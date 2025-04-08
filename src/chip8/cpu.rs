@@ -1,6 +1,5 @@
 use super::{constants::*, display::Display, keyboard::Keyboard, memory::Memory, utils::beep};
 use rand::prelude::*;
-use std::thread;
 
 pub struct CPU {
     pc: u16,
@@ -26,9 +25,7 @@ impl CPU {
     pub fn update_timers(&mut self) {
         if self.sound_timer > 0 {
             self.sound_timer = self.sound_timer.wrapping_sub(1);
-            thread::spawn(move || {
-                beep(440, 550);
-            });
+            beep(100, 100);
         }
 
         if self.delay_timer > 0 {
