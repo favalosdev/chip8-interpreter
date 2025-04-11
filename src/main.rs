@@ -73,7 +73,6 @@ fn main() -> Result<(), String> {
                 eprintln!("CPU error: {}", e);
                 break 'main;
             }
-
             last_cpu_tick = now;
         }
 
@@ -124,7 +123,6 @@ fn main() -> Result<(), String> {
                 canvas.present();
                 display.changed = false;
             }
-
             last_sdl_tick = now;
         }
     }
