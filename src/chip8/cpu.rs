@@ -1,4 +1,5 @@
 use super::{constants::*, display::Display, keyboard::Keyboard, memory::Memory, utils::beep};
+use config::Config;
 use rand::prelude::*;
 
 pub struct CPU {
@@ -8,10 +9,19 @@ pub struct CPU {
     stack: Vec<u16>,
     sound_timer: u8,
     delay_timer: u8,
+    settings: Config,
 }
 
 impl CPU {
     pub fn new() -> Self {
+        let settings = Config::builder()
+            // Add in `./Settings.toml`
+            .add_source(config::File::with_name("Settings"))
+            // Add in settings from the environment (with a prefix of APP)
+            // Eg.. `APP_DEBUG=1 ./target/app` would set the `debug` key
+            .build()
+            .unwrap();
+
         Self {
             pc: PROGRAM_START_ADDRESS,
             v: [0; 16],
@@ -19,6 +29,7 @@ impl CPU {
             stack: Vec::new(),
             sound_timer: 0,
             delay_timer: 0,
+            settings,
         }
     }
 
@@ -71,6 +82,9 @@ impl CPU {
         let n = (opcode & 0x000F) as u8;
         let nn = (opcode & 0x00FF) as u8;
         let nnn: u16 = opcode & 0x0FFF;
+        let has_shift_quirk = self.settings.get::<bool>("shift_quirk").unwrap();
+        let has_jump_quirk = self.settings.get::<bool>("jump_quirk").unwrap();
+        let has_memory_quirk = self.settings.get::<bool>("memory_quirk").unwrap();
 
         let error: Result<(), String> = Err(format!("Unknown opcode: {:#06X}", opcode));
         let mut rng = rand::rng();
@@ -155,8 +169,13 @@ impl CPU {
                     self.v[0xF] = u8::from(!borrow);
                 }
                 0x6 => {
-                    let prev = self.v[y];
-                    self.v[x] = self.v[y];
+                    let mut prev = self.v[x];
+
+                    if has_shift_quirk {
+                        prev = self.v[y];
+                        self.v[x] = self.v[y];
+                    }
+
                     self.v[x] >>= 1;
                     self.v[0xF] = prev & 1;
                 }
@@ -166,8 +185,13 @@ impl CPU {
                     self.v[0xF] = u8::from(!borrow);
                 }
                 0xE => {
-                    let prev = self.v[y];
-                    self.v[x] = self.v[y];
+                    let mut prev = self.v[x];
+
+                    if has_shift_quirk {
+                        prev = self.v[y];
+                        self.v[x] = self.v[y];
+                    }
+
                     self.v[x] <<= 1;
                     self.v[0xF] = (prev >> 7) & 1;
                 }
@@ -183,7 +207,8 @@ impl CPU {
             }
             0xB => {
                 // Overrides increment
-                self.pc = nnn.wrapping_add(self.v[0] as u16);
+                let to_add = if has_jump_quirk { self.v[0] } else { self.v[x] };
+                self.pc = nnn.wrapping_add(to_add as u16);
             }
             0xC => {
                 let random = rng.random::<u8>();
@@ -256,14 +281,18 @@ impl CPU {
                     for j in 0..=x {
                         memory.write_byte(start + j, self.v[j]);
                     }
-                    self.i = self.i.wrapping_add(x as u16 + 1);
+                    if has_memory_quirk {
+                        self.i = self.i.wrapping_add(x as u16 + 1);
+                    }
                 }
                 0x65 => {
                     let start = self.i as usize;
                     for j in 0..=x {
                         self.v[j] = memory.read_byte(start + j);
                     }
-                    self.i = self.i.wrapping_add(x as u16 + 1);
+                    if has_memory_quirk {
+                        self.i = self.i.wrapping_add(x as u16 + 1);
+                    }
                 }
                 _ => return error,
             },
