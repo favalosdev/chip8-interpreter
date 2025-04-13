@@ -15,10 +15,7 @@ pub struct CPU {
 impl CPU {
     pub fn new() -> Self {
         let settings = Config::builder()
-            // Add in `./Settings.toml`
             .add_source(config::File::with_name("Settings"))
-            // Add in settings from the environment (with a prefix of APP)
-            // Eg.. `APP_DEBUG=1 ./target/app` would set the `debug` key
             .build()
             .unwrap();
 
