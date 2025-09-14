@@ -1,4 +1,5 @@
 use sdl2::{event::Event, keyboard::Scancode};
+use sdl2::pixels::Color;
 use std::env;
 use std::fs::File;
 use std::io::Read;
@@ -100,22 +101,19 @@ fn main() -> Result<(), String> {
                 }
             }
 
+
             if display.changed {
-                canvas.set_draw_color(sdl2::pixels::Color::RGB(0, 0, 0));
-                canvas.clear();
-
-                canvas.set_draw_color(sdl2::pixels::Color::RGB(255, 255, 255));
-
                 for y in 0..ORIGINAL_HEIGHT as usize {
                     for x in 0..ORIGINAL_WIDTH as usize {
                         if display.pixels[y][x] {
+                            canvas.set_draw_color(Color::RGB(255, 255, 255));
                             let rect = sdl2::rect::Rect::new(
                                 (x as u32 * SCALE_FACTOR) as i32,
                                 (y as u32 * SCALE_FACTOR) as i32,
                                 SCALE_FACTOR,
                                 SCALE_FACTOR,
                             );
-                            canvas.fill_rect(rect)?;
+                            let _ = canvas.fill_rect(rect);
                         }
                     }
                 }
