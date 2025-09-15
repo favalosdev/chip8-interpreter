@@ -107,14 +107,16 @@ fn main() -> Result<(), String> {
                     for x in 0..ORIGINAL_WIDTH as usize {
                         if display.pixels[y][x] {
                             canvas.set_draw_color(Color::RGB(255, 255, 255));
-                            let rect = sdl2::rect::Rect::new(
-                                (x as u32 * SCALE_FACTOR) as i32,
-                                (y as u32 * SCALE_FACTOR) as i32,
-                                SCALE_FACTOR,
-                                SCALE_FACTOR,
-                            );
-                            let _ = canvas.fill_rect(rect);
+                        } else {
+                            canvas.set_draw_color(Color::RGB(0, 0, 0));
                         }
+                        let rect = sdl2::rect::Rect::new(
+                            (x as u32 * SCALE_FACTOR) as i32,
+                            (y as u32 * SCALE_FACTOR) as i32,
+                            SCALE_FACTOR,
+                            SCALE_FACTOR,
+                        );
+                        let _ = canvas.fill_rect(rect);
                     }
                 }
 
