@@ -101,7 +101,6 @@ fn main() -> Result<(), String> {
                 }
             }
 
-
             if display.changed {
                 for y in 0..ORIGINAL_HEIGHT as usize {
                     for x in 0..ORIGINAL_WIDTH as usize {
@@ -119,13 +118,11 @@ fn main() -> Result<(), String> {
                         let _ = canvas.fill_rect(rect);
                     }
                 }
-
                 canvas.present();
                 display.changed = false;
             }
             last_sdl_tick = now;
         }
     }
-
     Ok(())
 }
