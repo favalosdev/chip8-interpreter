@@ -58,7 +58,7 @@ cargo build
 To run the interpreter, load one of the roms in the `roms` folder. For example:
 
 ```bash
-cargo run roms/test/1-chip8-logo.ch8
+cargo run roms/games/Space_Invaders_[David Winter].ch8
 ```
 
 ## Project Structure
@@ -73,10 +73,10 @@ cargo run roms/test/1-chip8-logo.ch8
 
 ## Testing
 
-Run the test suite:
+To run tests, load one of the test roms in the `roms/test` folder. For example:
 
 ```bash
-cargo test
+cargo run roms/test/1-chip8-logo.ch8
 ```
 
 ## License
