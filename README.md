@@ -55,7 +55,7 @@ cargo build
 
 ## Running
 
-To run the interpreter, load one of the roms in the `roms` folder. For example:
+To run the interpreter, load one of the roms in the `roms/games` folder. For example:
 
 ```bash
 cargo run roms/games/Space_Invaders_[David Winter].ch8
